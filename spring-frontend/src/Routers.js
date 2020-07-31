@@ -1,32 +1,66 @@
 import React from 'react';
-import {
-  BrowserRouter as Router,
-  Route,
-  Link
-} from "react-router-dom";
+import Container from 'react-bootstrap/Container'
+import Row from 'react-bootstrap/Row'
+import Table from 'react-bootstrap/Table'
+import Col from 'react-bootstrap/Col'
+import Button from 'react-bootstrap/Button'
+import {Link} from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css';
-import "bootswatch/dist/journal/bootstrap.min.css";
-import './App.css';
-class Routers extends React.Component(){
-    constructor(props){
-        super(props)
-        this.state = props.state
-        this.changeState = props.method
+import "bootswatch/dist/lux/bootstrap.min.css";
+
+
+function Routers(){
+
+    const [results, setRouters] = React.useState([])
+
+    async function fetchRouters(){
+        await fetch(`http://localhost:8080/routers/all`)
+          .then((response) => response.json())
+          .then((json) => setRouters(json))
     }
-    ComponentWillMount(){
-        const response = await fetch('http://localhost:8080/routers/all',{
-            method: 'GET',
-            mode: 'cors',
-            headers:{
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'},
+
+    if (results.length === 0) {
+        fetchRouters()
+    }
+    async function deleteRouter(event, id){
+        // event.preventDefault()
+        console.log("Deleting")
+
+        await fetch(`http://localhost:8080/routers/delete/${id}`, {
+            method: 'DELETE',
         })
-        let result = await response.json()
-        this.changeState(result)
+        window.location.reload()
+
     }
-    render(){
+
+   var tableBody = results.map((router, index) => {
+       var variant;
+       if(router.status == "red"){
+           variant = "text-danger"
+       }else if(router.status == "yellow"){
+           variant = "text-warning"
+       }else{
+           variant = "text-success"
+       }
         return(
+            <tr>
+                <th>{router.id}</th>
+                <th>{router.name}</th>
+                <th>{router.macAddress}</th>
+                <th>{router.ipAddress}</th>
+                <th>{router.active.toString()}</th>
+                <th>{router.lastActive}</th>
+                <th class = {variant}>{router.status}</th>
+                <Link to="/editrouters">
+                    <Button variant = "success">Edit</Button>
+                </Link>
+                <Button variant = "danger" onClick = {e=>deleteRouter(e, router.id)}>Delete</Button>
+            </tr>
+        )
+    })
+
+
+    return(
         <Container>
             <Row>
                 <Col>
@@ -44,25 +78,19 @@ class Routers extends React.Component(){
                         </tr>
                     </thead>
                     <tbody>
-                        {this.state.serverResponse.map((item,key) => {
-                            <tr>
-                                <td>{item.id}</td>
-                                <td>{item.name}</td>
-                                <td>{item.macAddress}</td>
-                                <td>{item.ipAddress}</td>
-                                <td>{item.active}</td>
-                                <td>{item.lastActive}</td>
-                                <td>{item.status}</td>
-                            </tr>
-                        })}
+                        {tableBody}
                     </tbody>
                 </Table>
+                <Link to="/addrouter">
+                    <Button variant = "primary">Add Router</Button>
+                </Link>
+
                 </Col>
             </Row>
+            <br/>
         </Container>
-        )
-        
+    )
 
-    }
 }
+
 export default Routers
